@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Leadership & 7 Habits Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 16px;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .question {
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .meta {
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+      border: 1px solid #666;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    #resultCard {
+      margin-top: 16px;
+      display: none;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    small {
+      font-size: 12px;
+      color: #555;
+    }
+    ul {
+      padding-left: 18px;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: left;
+    }
+    th {
+      background: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Leadership & 7 Habits Analyzer</h1>
+  <p style="text-align:center;">
+    Answer a short AI-style quiz based on <b>The 7 Habits of Highly Effective People</b> and leadership psychology.
+  </p>
+
+  <div class="card">
+    <label for="name"><b>Enter your name:</b></label>
+    <input type="text" id="name" placeholder="Your name..." />
+    <small>Your name is used only to personalise the feedback on this page.</small>
+  </div>
+
+  <form id="quizForm"></form>
+
+  <button type="button" onclick="calculateResult()">Generate My AI Report</button>
+
+  <div id="resultCard" class="card">
+    <h2>Your AI-Generated Leadership Report</h2>
+    <p id="greeting"></p>
+    <p id="overallStyle"></p>
+
+    <h3>Summary Snapshot 🧠</h3>
+    <p id="summary"></p>
+
+    <h3>Positive & Improvement Areas 📊</h3>
+    <table id="areasTable">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Type</th>
+          <th>Simple Tip</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    // -----------------------------
+    // Helper: random pick from list
+    // -----------------------------
+    function pickRandom(list) {
+      if (!list || !list.length) return "";
+      const idx = Math.floor(Math.random() * list.length);
+      return list[idx];
+    }
+
+    // -----------------------------
+    // Question Bank (BIG pool)
+    // -----------------------------
+    const questionBank = [
+      {
+        text: "I take responsibility for my choices instead of blaming others.",
+        habit: "Be Proactive (Habit 1)",
+        trait: "Ownership"
+      },
+      {
+        text: "Before starting work, I am clear about the outcome I want.",
+        habit: "Begin with the End in Mind (Habit 2)",
+        trait: "Vision"
+      },
+      {
+        text: "I plan my day so that important tasks are done first.",
+        habit: "Put First Things First (Habit 3)",
+        trait: "Time Management"
+      },
+      {
+        text: "In a conflict, I look for options that benefit both sides.",
+        habit: "Think Win–Win (Habit 4)",
+        trait: "Collaboration"
+      },
+      {
+        text: "I listen to people fully before I reply with my point.",
+        habit: "Seek First to Understand (Habit 5)",
+        trait: "Empathy"
+      },
+      {
+        text: "I like combining different people’s ideas to make a better result.",
+        habit: "Synergize (Habit 6)",
+        trait: "Teamwork"
+      },
+      {
+        text: "I regularly spend time upgrading my skills or learning new things.",
+        habit: "Sharpen the Saw (Habit 7)",
+        trait: "Self-Improvement"
+      },
+      {
+        text: "In stressful situations, I stay calm and think before reacting.",
+        habit: "Be Proactive (Habit 1)",
+        trait: "Emotional Control"
+      },
+      {
+        text: "I set long-term goals for my career, studies or life.",
+        habit: "Begin with the End in Mind (Habit 2)",
+        trait: "Long-term Thinking"
+      },
+      {
+        text: "I avoid wasting time on unimportant distractions when I have work to do.",
+        habit: "Put First Things First (Habit 3)",
+        trait: "Discipline"
+      },
+      {
+        text: "I am happy when others also succeed, not only me.",
+        habit: "Think Win–Win (Habit 4)",
+        trait: "Abundance Mindset"
+      },
+      {
+        text: "Even if I disagree, I try to understand why the other person feels that way.",
+        habit: "Seek First to Understand (Habit 5)",
+        trait: "Listening"
+      },
+      {
+        text: "In groups, I participate actively instead of staying silent.",
+        habit: "Synergize (Habit 6)",
+        trait: "Initiative in Team"
+      },
+      {
+        text: "I take care of my physical or mental health consciously.",
+        habit: "Sharpen the Saw (Habit 7)",
+        trait: "Well-being"
+      },
+      {
+        text: "I don’t wait for permission; I start working when I see something needs to be done.",
+        habit: "Be Proactive (Habit 1)",
+        trait: "Initiative"
+      },
+      {
+        text: "I am comfortable taking decisions even when everything is not 100% clear.",
+        habit: "Decision-Making",
+        trait: "Confidence"
+      },
+      {
+        text: "People often come to me for help or guidance in tasks or projects.",
+        habit: "Leadership Influence",
+        trait: "Supportiveness"
+      },
+      {
+        text: "I reflect on my day and think about what I could have done better.",
+        habit: "Sharpen the Saw (Habit 7)",
+        trait: "Self-Reflection"
+      },
+      // Extra questions for more variety
+      {
+        text: "I stay calm when plans change suddenly.",
+        habit: "Be Proactive (Habit 1)",
+        trait: "Emotional Control"
+      },
+      {
+        text: "I break big tasks into smaller steps before starting.",
+        habit: "Put First Things First (Habit 3)",
+        trait: "Planning"
+      },
+      {
+        text: "I appreciate different cultures, languages, or backgrounds in my classmates.",
+        habit: "Synergize (Habit 6)",
+        trait: "Respect for Diversity"
+      },
+      {
+        text: "I keep my promises and commitments, even small ones.",
+        habit: "Be Proactive (Habit 1)",
+        trait: "Integrity"
+      },
+      {
+        text: "I set aside time without screens to think or reflect.",
+        habit: "Sharpen the Saw (Habit 7)",
+        trait: "Quiet Reflection"
+      },
+      {
+        text: "I encourage quiet people in the group to share ideas.",
+        habit: "Synergize (Habit 6)",
+        trait: "Inclusion"
+      },
+      {
+        text: "When I make a mistake, I admit it quickly.",
+        habit: "Be Proactive (Habit 1)",
+        trait: "Honesty"
+      },
+      {
+        text: "I try to learn at least one new thing every week.",
+        habit: "Sharpen the Saw (Habit 7)",
+        trait: "Learning Mindset"
+      },
+      {
+        text: "I think about how today's choices affect my future.",
+        habit: "Begin with the End in Mind (Habit 2)",
+        trait: "Future Focus"
+      },
+      {
+        text: "I help resolve conflicts between friends or teammates.",
+        habit: "Think Win–Win (Habit 4)",
+        trait: "Mediation"
+      }
+    ];
+
+    const NUM_QUESTIONS = 10; // how many to show per person
+
+    // Shuffle array helper
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Pick 10 random questions from the bank
+    const selectedQuestions = shuffle([...questionBank]).slice(0, NUM_QUESTIONS);
+
+    // -----------------------------
+    // Render Questions Dynamically
+    // -----------------------------
+    const form = document.getElementById("quizForm");
+
+    selectedQuestions.forEach((q, index) => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const qText = document.createElement("div");
+      qText.className = "question";
+      qText.textContent = (index + 1) + ". " + q.text;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `
+        <span class="tag">${q.habit}</span>
+        <span class="tag">${q.trait}</span>
+      `;
+
+      const options = document.createElement("div");
+      options.className = "options";
+
+      const scaleLabels = [
+        "1 - Strongly Disagree",
+        "2 - Disagree",
+        "3 - Neutral",
+        "4 - Agree",
+        "5 - Strongly Agree"
+      ];
+
+      for (let i = 1; i <= 5; i++) {
+        const label = document.createElement("label");
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "q" + index;
+        input.value = i;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(" " + scaleLabels[i-1]));
+        options.appendChild(label);
+      }
+
+      card.appendChild(qText);
+      card.appendChild(meta);
+      card.appendChild(options);
+      form.appendChild(card);
+    });
+
+    // -----------------------------
+    // Tips library for table
+    // -----------------------------
+    const habitTips = {
+      "Be Proactive (Habit 1)": {
+        strong: [
+          "You already act like the driver of your life. Keep taking small initiative every day.",
+          "Your proactive nature is a strength. Use it to help others move forward too."
+        ],
+        weak: [
+          "Choose one area where you usually react and practise pausing for 5 seconds before you respond.",
+          "Start the day by asking: ‘What can I control today?’ and focus only on those things."
+        ]
+      },
+      "Begin with the End in Mind (Habit 2)": {
+        strong: [
+          "You think like a planner. Keep writing down your goals so they stay clear in your mind.",
+          "Your future focus is a gift. Use it to design projects and plans for yourself and your team."
+        ],
+        weak: [
+          "Write one simple sentence about what you want your future to look like and put it where you see it daily.",
+          "Before starting a task, quietly ask: ‘What result do I want from this?’ and say it in one line."
+        ]
+      },
+      "Put First Things First (Habit 3)": {
+        strong: [
+          "You already know how to put important work first. Keep protecting your study or focus time.",
+          "You handle priorities well. Use this habit to help others stay organised too."
+        ],
+        weak: [
+          "Every night, list just 3 important tasks for tomorrow and do them before low-value activities.",
+          "Keep your phone away for 25 minutes while you complete one important task."
+        ]
+      },
+      "Think Win–Win (Habit 4)": {
+        strong: [
+          "You naturally look for solutions that help everyone. This makes people trust you.",
+          "Your win–win mindset is great for teamwork. Keep asking, ‘How can this be good for both sides?’"
+        ],
+        weak: [
+          "In your next disagreement, try to say: ‘I want this to be fair for both of us. What will work for you?’",
+          "Practise celebrating others’ success. It trains your mind to think win–win."
+        ]
+      },
+      "Seek First to Understand (Habit 5)": {
+        strong: [
+          "You listen well, which makes people feel safe with you.",
+          "Your listening skill is a quiet superpower. Keep using it before you speak."
+        ],
+        weak: [
+          "In the next conversation, let the other person speak more and repeat their main point back to them.",
+          "Put your phone down while someone is talking and give full eye contact for at least one minute."
+        ]
+      },
+      "Synergize (Habit 6)": {
+        strong: [
+          "You work well with others and make the team better.",
+          "You enjoy mixing ideas. This helps you create results that are better than doing it alone."
+        ],
+        weak: [
+          "In your next group work, invite one quiet person to share their idea.",
+          "Say out loud at least one good thing about someone else’s idea before giving your own."
+        ]
+      },
+      "Sharpen the Saw (Habit 7)": {
+        strong: [
+          "You already invest in your growth. Keep that habit alive.",
+          "You look after your mind and body. This will support long-term success."
+        ],
+        weak: [
+          "Block 20 minutes a day for reading, learning or exercise and protect that time.",
+          "Pick one small activity for self-care (walk, journaling, stretching) and do it daily for a week."
+        ]
+      },
+      "Decision-Making": {
+        strong: [
+          "You are able to decide even when things are not perfect. This is important for leadership.",
+          "You don’t stay stuck for long; you choose and move. Keep using that courage wisely."
+        ],
+        weak: [
+          "For small decisions, give yourself a 2-minute timer and then choose the best available option.",
+          "Write pros and cons for one decision and then pick the side that feels most responsible."
+        ]
+      },
+      "Leadership Influence": {
+        strong: [
+          "People trust you for help, which is a clear sign of leadership influence.",
+          "Others already see you as helpful. Keep this caring style as you grow in responsibility."
+        ],
+        weak: [
+          "Offer help to one person this week without them asking. Small support builds big influence.",
+          "Share one useful resource (a note, a link, a tip) with a friend who needs it."
+        ]
+      }
+    };
+
+    // Extra texts for score buckets (more variety)
+    const highBucketTexts = [
+      "Your habits are already very strong. You lead yourself well and others can rely on you.",
+      "You’re already using many effective habits. Keep them consistent and you’ll be a natural role model."
+    ];
+    const midBucketTexts = [
+      "You have a good base of habits. With a little focus, you can quickly move to the next level.",
+      "Your habits are in a healthy middle zone. A few daily improvements can push you into the top range."
+    ];
+    const lowBucketTexts = [
+      "You are still building your habits. Small daily changes will make a big difference over time.",
+      "Right now your habits are just starting to grow. This is a great stage to add one new positive action each day."
+    ];
+
+    // -----------------------------
+    // AI-style Analysis Logic
+    // -----------------------------
+    function calculateResult() {
+      const name = document.getElementById("name").value.trim() || "Leader";
+
+      let totalScore = 0;
+      let habitScores = {};
+      let traitScores = {};
+
+      for (let i = 0; i < selectedQuestions.length; i++) {
+        const radios = document.getElementsByName("q" + i);
+        let answered = false;
+
+        for (const r of radios) {
+          if (r.checked) {
+            answered = true;
+            const value = parseInt(r.value);
+            totalScore += value;
+
+            const habit = selectedQuestions[i].habit;
+            const trait = selectedQuestions[i].trait;
+
+            if (!habitScores[habit]) habitScores[habit] = { sum: 0, count: 0 };
+            if (!traitScores[trait]) traitScores[trait] = { sum: 0, count: 0 };
+
+            habitScores[habit].sum += value;
+            habitScores[habit].count += 1;
+
+            traitScores[trait].sum += value;
+            traitScores[trait].count += 1;
+          }
+        }
+        if (!answered) {
+          alert("Please answer all questions before generating your AI report.");
+          return;
+        }
+      }
+
+      const maxScore = selectedQuestions.length * 5;
+      const percentage = Math.round((totalScore / maxScore) * 100);
+
+      // Compute averages for habits
+      const strongHabits = [];
+      const weakHabits = [];
+
+      Object.keys(habitScores).forEach(h => {
+        const avg = habitScores[h].sum / habitScores[h].count;
+        if (avg >= 4.0) strongHabits.push(h);
+        else if (avg <= 3.0) weakHabits.push(h);
+      });
+
+      // Traits for summary
+      const highTraits = [];
+      const lowTraits = [];
+
+      Object.keys(traitScores).forEach(t => {
+        const avg = traitScores[t].sum / traitScores[t].count;
+        if (avg >= 4.0) highTraits.push(t);
+        else if (avg <= 3.0) lowTraits.push(t);
+      });
+
+      const summaryParts = [];
+      if (highTraits.length) {
+        summaryParts.push(
+          "You naturally show strength in traits like " + highTraits.join(", ") + "."
+        );
+      }
+      if (lowTraits.length) {
+        summaryParts.push(
+          "You can grow further by paying attention to traits such as " + lowTraits.join(", ") + "."
+        );
+      }
+      if (!summaryParts.length) {
+        summaryParts.push(
+          "Your responses show a fairly balanced profile without extreme strengths or weaknesses in this short check."
+        );
+      }
+
+      // Persona label (fun + simple)
+      let persona = "";
+      if (strongHabits.includes("Synergize (Habit 6)") || strongHabits.includes("Think Win–Win (Habit 4)")) {
+        persona = "Friendly Team Helper 🤝";
+      } else if (strongHabits.includes("Be Proactive (Habit 1)") || strongHabits.includes("Decision-Making")) {
+        persona = "Action Taker Leader 🚀";
+      } else if (strongHabits.includes("Begin with the End in Mind (Habit 2)") || strongHabits.includes("Put First Things First (Habit 3)")) {
+        persona = "Planner & Organizer 📅";
+      } else if (strongHabits.includes("Sharpen the Saw (Habit 7)")) {
+        persona = "Growth Focused Learner 📚";
+      } else {
+        persona = "Leader in the Making 🌱";
+      }
+
+      // Score bucket text (random variant)
+      let bucketText;
+      if (percentage >= 80) {
+        bucketText = pickRandom(highBucketTexts);
+      } else if (percentage >= 60) {
+        bucketText = pickRandom(midBucketTexts);
+      } else {
+        bucketText = pickRandom(lowBucketTexts);
+      }
+
+      const overallStyleLine =
+        `Your style looks like: <b>${persona}</b><br>` +
+        `Overall habit score: about ${percentage}%. ${bucketText}`;
+
+      // Build table rows: positive and improvement areas
+      const tableBody = document.querySelector("#areasTable tbody");
+      tableBody.innerHTML = "";
+
+      const strongLimited = strongHabits.slice(0, 3);
+      const weakLimited = weakHabits.slice(0, 3);
+
+      strongLimited.forEach(area => {
+        const tipList = habitTips[area]?.strong || [
+          "This is a good habit for you. Keep using it every day."
+        ];
+        const tip = pickRandom(tipList);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${area}</td>
+          <td>Positive area ✅</td>
+          <td>${tip}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      weakLimited.forEach(area => {
+        const tipList = habitTips[area]?.weak || [
+          "Pick one small action you can do this week to slowly build this habit."
+        ];
+        const tip = pickRandom(tipList);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${area}</td>
+          <td>Needs improvement ⚠️</td>
+          <td>${tip}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // If nothing strong/weak
+      if (!strongLimited.length && !weakLimited.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>Overall habits</td>
+          <td>Balanced</td>
+          <td>Keep practising small positive actions every day to strengthen your leadership.</td>
+        `;
+        tableBody.appendChild(tr);
+      }
+
+      // -----------------------------
+      // Update UI
+      // -----------------------------
+      document.getElementById("greeting").textContent =
+        name + ", here is your AI-style leadership snapshot.";
+
+      document.getElementById("overallStyle").innerHTML = overallStyleLine;
+      document.getElementById("summary").textContent = summaryParts.join(" ");
+
+      document.getElementById("resultCard").style.display = "block";
+      window.scrollTo({ top: document.getElementById("resultCard").offsetTop, behavior: "smooth" });
+    }
+  </script>
+</body>
+</html>
